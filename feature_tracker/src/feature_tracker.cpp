@@ -12,8 +12,8 @@ bool inBorder(const cv::Point2f &pt)
 
 void reduceVector(vector<cv::Point2f> &v, vector<uchar> status)
 {
-    int j = 0;
-    for (int i = 0; i < int(v.size()); i++)
+    size_t j = 0;
+    for (size_t i = 0; i < v.size(); i++)
         if (status[i])
             v[j++] = v[i];
     v.resize(j);
@@ -21,8 +21,8 @@ void reduceVector(vector<cv::Point2f> &v, vector<uchar> status)
 
 void reduceVector(vector<int> &v, vector<uchar> status)
 {
-    int j = 0;
-    for (int i = 0; i < int(v.size()); i++)
+    size_t j = 0;
+    for (size_t i = 0; i < v.size(); i++)
         if (status[i])
             v[j++] = v[i];
     v.resize(j);
@@ -112,7 +112,7 @@ void FeatureTracker::readImage(const cv::Mat &_img, double _cur_time)
         vector<float> err;
         cv::calcOpticalFlowPyrLK(cur_img, forw_img, cur_pts, forw_pts, status, err, cv::Size(21, 21), 3);
 
-        for (int i = 0; i < int(forw_pts.size()); i++)
+        for (size_t i = 0; i < forw_pts.size(); i++)
             if (status[i] && !inBorder(forw_pts[i]))
                 status[i] = 0;
         reduceVector(prev_pts, status);
@@ -137,7 +137,7 @@ void FeatureTracker::readImage(const cv::Mat &_img, double _cur_time)
 
         ROS_DEBUG("detect feature begins");
         TicToc t_t;
-        int n_max_cnt = MAX_CNT - static_cast<int>(forw_pts.size());
+        int n_max_cnt = static_cast<int>(MAX_CNT) - static_cast<int>(forw_pts.size());
         if (n_max_cnt > 0)
         {
             if(mask.empty())
@@ -146,7 +146,7 @@ void FeatureTracker::readImage(const cv::Mat &_img, double _cur_time)
                 cout << "mask type wrong " << endl;
             if (mask.size() != forw_img.size())
                 cout << "wrong size " << endl;
-            cv::goodFeaturesToTrack(forw_img, n_pts, MAX_CNT - forw_pts.size(), 0.01, MIN_DIST, mask);
+            cv::goodFeaturesToTrack(forw_img, n_pts, static_cast<int>(MAX_CNT - forw_pts.size()), 0.01, MIN_DIST, mask);
         }
         else
             n_pts.clear();
@@ -173,30 +173,30 @@ void FeatureTracker::rejectWithF()
         ROS_DEBUG("FM ransac begins");
         TicToc t_f;
         vector<cv::Point2f> un_cur_pts(cur_pts.size()), un_forw_pts(forw_pts.size());
-        for (unsigned int i = 0; i < cur_pts.size(); i++)
+        for (size_t i = 0; i < cur_pts.size(); i++)
         {
             Eigen::Vector3d tmp_p;
             m_camera->liftProjective(Eigen::Vector2d(cur_pts[i].x, cur_pts[i].y), tmp_p);
             tmp_p.x() = FOCAL_LENGTH * tmp_p.x() / tmp_p.z() + COL / 2.0;
             tmp_p.y() = FOCAL_LENGTH * tmp_p.y() / tmp_p.z() + ROW / 2.0;
-            un_cur_pts[i] = cv::Point2f(tmp_p.x(), tmp_p.y());
+            un_cur_pts[i] = cv::Point2f(static_cast<float>(tmp_p.x()), static_cast<float>(tmp_p.y()));
 
             m_camera->liftProjective(Eigen::Vector2d(forw_pts[i].x, forw_pts[i].y), tmp_p);
             tmp_p.x() = FOCAL_LENGTH * tmp_p.x() / tmp_p.z() + COL / 2.0;
             tmp_p.y() = FOCAL_LENGTH * tmp_p.y() / tmp_p.z() + ROW / 2.0;
-            un_forw_pts[i] = cv::Point2f(tmp_p.x(), tmp_p.y());
+            un_forw_pts[i] = cv::Point2f(static_cast<float>(tmp_p.x()), static_cast<float>(tmp_p.y()));
         }
 
         vector<uchar> status;
         cv::findFundamentalMat(un_cur_pts, un_forw_pts, cv::FM_RANSAC, F_THRESHOLD, 0.99, status);
-        int size_a = cur_pts.size();
+        size_t size_a = cur_pts.size();
         reduceVector(prev_pts, status);
         reduceVector(cur_pts, status);
         reduceVector(forw_pts, status);
         reduceVector(cur_un_pts, status);
         reduceVector(ids, status);
         reduceVector(track_cnt, status);
-        ROS_DEBUG("FM ransac: %d -> %lu: %f", size_a, forw_pts.size(), 1.0 * forw_pts.size() / size_a);
+        ROS_DEBUG("FM ransac: %zu -> %lu: %f", size_a, forw_pts.size(), 1.0 * forw_pts.size() / size_a);
         ROS_DEBUG("FM ransac costs: %fms", t_f.toc());
     }
 }
@@ -233,7 +233,7 @@ void FeatureTracker::showUndistortion(const string &name)
             undistortedp.push_back(Eigen::Vector2d(b.x() / b.z(), b.y() / b.z()));
             //printf("%f,%f->%f,%f,%f\n)\n", a.x(), a.y(), b.x(), b.y(), b.z());
         }
-    for (int i = 0; i < int(undistortedp.size()); i++)
+    for (size_t i = 0; i < undistortedp.size(); i++)
     {
         cv::Mat pp(3, 1, CV_32FC1);
         pp.at<float>(0, 0) = undistortedp[i].x() * FOCAL_LENGTH + COL / 2;

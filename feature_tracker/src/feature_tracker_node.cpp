@@ -130,7 +130,7 @@ void img_callback(const sensor_msgs::ImageConstPtr &img_msg)
             auto &cur_pts = trackerData[i].cur_pts;
             auto &ids = trackerData[i].ids;
             auto &pts_velocity = trackerData[i].pts_velocity;
-            for (unsigned int j = 0; j < ids.size(); j++)
+            for (size_t j = 0; j < ids.size(); j++)
             {
                 if (trackerData[i].track_cnt[j] > 1)
                 {

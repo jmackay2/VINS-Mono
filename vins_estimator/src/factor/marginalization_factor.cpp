@@ -8,7 +8,7 @@ void ResidualBlockInfo::Evaluate()
     raw_jacobians = new double *[block_sizes.size()];
     jacobians.resize(block_sizes.size());
 
-    for (int i = 0; i < static_cast<int>(block_sizes.size()); i++)
+    for (size_t i = 0; i < block_sizes.size(); ++i)
     {
         jacobians[i].resize(cost_function->num_residuals(), block_sizes[i]);
         raw_jacobians[i] = jacobians[i].data();
@@ -59,7 +59,7 @@ void ResidualBlockInfo::Evaluate()
             alpha_sq_norm_ = alpha / sq_norm;
         }
 
-        for (int i = 0; i < static_cast<int>(parameter_blocks.size()); i++)
+        for (size_t i = 0; i < parameter_blocks.size(); ++i)
         {
             jacobians[i] = sqrt_rho1_ * (jacobians[i] - alpha_sq_norm_ * residuals * (residuals.transpose() * jacobians[i]));
         }
@@ -75,7 +75,7 @@ MarginalizationInfo::~MarginalizationInfo()
     for (auto it = parameter_block_data.begin(); it != parameter_block_data.end(); ++it)
         delete[] it->second;
 
-    for (int i = 0; i < (int)factors.size(); i++)
+    for (size_t i = 0; i < factors.size(); ++i)
     {
 
         delete[] factors[i]->raw_jacobians;
@@ -93,16 +93,16 @@ void MarginalizationInfo::addResidualBlockInfo(ResidualBlockInfo *residual_block
     std::vector<double *> &parameter_blocks = residual_block_info->parameter_blocks;
     std::vector<int> parameter_block_sizes = residual_block_info->cost_function->parameter_block_sizes();
 
-    for (int i = 0; i < static_cast<int>(residual_block_info->parameter_blocks.size()); i++)
+    for (size_t i = 0; i < residual_block_info->parameter_blocks.size(); ++i)
     {
         double *addr = parameter_blocks[i];
         int size = parameter_block_sizes[i];
         parameter_block_size[reinterpret_cast<long>(addr)] = size;
     }
 
-    for (int i = 0; i < static_cast<int>(residual_block_info->drop_set.size()); i++)
+    for (size_t i = 0; i < residual_block_info->drop_set.size(); ++i)
     {
-        double *addr = parameter_blocks[residual_block_info->drop_set[i]];
+        double *addr = parameter_blocks[static_cast<size_t>(residual_block_info->drop_set[i])];
         parameter_block_idx[reinterpret_cast<long>(addr)] = 0;
     }
 }
@@ -114,7 +114,7 @@ void MarginalizationInfo::preMarginalize()
         it->Evaluate();
 
         std::vector<int> block_sizes = it->cost_function->parameter_block_sizes();
-        for (int i = 0; i < static_cast<int>(block_sizes.size()); i++)
+        for (size_t i = 0; i < block_sizes.size(); ++i)
         {
             long addr = reinterpret_cast<long>(it->parameter_blocks[i]);
             int size = block_sizes[i];
@@ -140,17 +140,17 @@ int MarginalizationInfo::globalSize(int size) const
 
 void* ThreadsConstructA(void* threadsstruct)
 {
-    ThreadsStruct* p = ((ThreadsStruct*)threadsstruct);
+    ThreadsStruct* p = static_cast<ThreadsStruct*>(threadsstruct);
     for (auto it : p->sub_factors)
     {
-        for (int i = 0; i < static_cast<int>(it->parameter_blocks.size()); i++)
+        for (size_t i = 0; i < it->parameter_blocks.size(); ++i)
         {
             int idx_i = p->parameter_block_idx[reinterpret_cast<long>(it->parameter_blocks[i])];
             int size_i = p->parameter_block_size[reinterpret_cast<long>(it->parameter_blocks[i])];
             if (size_i == 7)
                 size_i = 6;
             Eigen::MatrixXd jacobian_i = it->jacobians[i].leftCols(size_i);
-            for (int j = i; j < static_cast<int>(it->parameter_blocks.size()); j++)
+            for (size_t j = i; j < it->parameter_blocks.size(); ++j)
             {
                 int idx_j = p->parameter_block_idx[reinterpret_cast<long>(it->parameter_blocks[j])];
                 int size_j = p->parameter_block_size[reinterpret_cast<long>(it->parameter_blocks[j])];
@@ -246,7 +246,7 @@ void MarginalizationInfo::marginalize()
         threadsstruct[i].b = Eigen::VectorXd::Zero(pos);
         threadsstruct[i].parameter_block_size = parameter_block_size;
         threadsstruct[i].parameter_block_idx = parameter_block_idx;
-        int ret = pthread_create( &tids[i], NULL, ThreadsConstructA ,(void*)&(threadsstruct[i]));
+        int ret = pthread_create( &tids[i], nullptr, ThreadsConstructA ,static_cast<void*>(&(threadsstruct[i])));
         if (ret != 0)
         {
             ROS_WARN("pthread_create error");
@@ -255,7 +255,7 @@ void MarginalizationInfo::marginalize()
     }
     for( int i = NUM_THREADS - 1; i >= 0; i--)  
     {
-        pthread_join( tids[i], NULL ); 
+        pthread_join( tids[i], nullptr );
         A += threadsstruct[i].A;
         b += threadsstruct[i].b;
     }
@@ -343,7 +343,7 @@ bool MarginalizationFactor::Evaluate(double const *const *parameters, double *re
     int n = marginalization_info->n;
     int m = marginalization_info->m;
     Eigen::VectorXd dx(n);
-    for (int i = 0; i < static_cast<int>(marginalization_info->keep_block_size.size()); i++)
+    for (size_t i = 0; i < marginalization_info->keep_block_size.size(); ++i)
     {
         int size = marginalization_info->keep_block_size[i];
         int idx = marginalization_info->keep_block_idx[i] - m;
@@ -365,7 +365,7 @@ bool MarginalizationFactor::Evaluate(double const *const *parameters, double *re
     if (jacobians)
     {
 
-        for (int i = 0; i < static_cast<int>(marginalization_info->keep_block_size.size()); i++)
+        for (size_t i = 0; i < marginalization_info->keep_block_size.size(); ++i)
         {
             if (jacobians[i])
             {

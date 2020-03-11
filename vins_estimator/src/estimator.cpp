@@ -8,7 +8,7 @@ Estimator::Estimator(): f_manager{Rs}
 
 void Estimator::setParameter()
 {
-    for (int i = 0; i < NUM_OF_CAM; i++)
+    for (size_t i = 0; i < NUM_OF_CAM; i++)
     {
         tic[i] = TIC[i];
         ric[i] = RIC[i];
@@ -53,7 +53,7 @@ void Estimator::clearState()
     }
 
     solver_flag = INITIAL;
-    first_imu = false,
+    first_imu = false;
     sum_of_back = 0;
     sum_of_front = 0;
     frame_count = 0;
@@ -229,7 +229,7 @@ bool Estimator::initialStructure()
             sum_g += tmp_g;
         }
         Vector3d aver_g;
-        aver_g = sum_g * 1.0 / ((int)all_image_frame.size() - 1);
+        aver_g = sum_g * 1.0 / (static_cast<int>(all_image_frame.size()) - 1);
         double var = 0;
         for (frame_it = all_image_frame.begin(), frame_it++; frame_it != all_image_frame.end(); frame_it++)
         {
@@ -238,7 +238,7 @@ bool Estimator::initialStructure()
             var += (tmp_g - aver_g).transpose() * (tmp_g - aver_g);
             //cout << "frame g " << tmp_g.transpose() << endl;
         }
-        var = sqrt(var / ((int)all_image_frame.size() - 1));
+        var = sqrt(var / (static_cast<int>(all_image_frame.size()) - 1));
         //ROS_WARN("IMU variation %f!", var);
         if(var < 0.25)
         {
@@ -321,10 +321,10 @@ bool Estimator::initialStructure()
                 if(it != sfm_tracked_points.end())
                 {
                     Vector3d world_pts = it->second;
-                    cv::Point3f pts_3(world_pts(0), world_pts(1), world_pts(2));
+                    cv::Point3f pts_3(static_cast<float>(world_pts(0)), static_cast<float>(world_pts(1)), static_cast<float>(world_pts(2)));
                     pts_3_vector.push_back(pts_3);
                     Vector2d img_pts = i_p.second.head<2>();
-                    cv::Point2f pts_2(img_pts(0), img_pts(1));
+                    cv::Point2f pts_2(static_cast<float>(img_pts(0)), static_cast<float>(img_pts(1)));
                     pts_2_vector.push_back(pts_2);
                 }
             }
@@ -450,7 +450,7 @@ bool Estimator::relativePose(Matrix3d &relative_R, Vector3d &relative_T, int &l)
         {
             double sum_parallax = 0;
             double average_parallax;
-            for (int j = 0; j < int(corres.size()); j++)
+            for (size_t j = 0; j < corres.size(); ++j)
             {
                 Vector2d pts_0(corres[j].first(0), corres[j].first(1));
                 Vector2d pts_1(corres[j].second(0), corres[j].second(1));
@@ -704,7 +704,7 @@ void Estimator::optimization()
     {
         // construct new marginlization_factor
         MarginalizationFactor *marginalization_factor = new MarginalizationFactor(last_marginalization_info);
-        problem.AddResidualBlock(marginalization_factor, NULL,
+        problem.AddResidualBlock(marginalization_factor, nullptr,
                                  last_marginalization_parameter_blocks);
     }
 
@@ -714,7 +714,7 @@ void Estimator::optimization()
         if (pre_integrations[j]->sum_dt > 10.0)
             continue;
         IMUFactor* imu_factor = new IMUFactor(pre_integrations[j]);
-        problem.AddResidualBlock(imu_factor, NULL, para_Pose[i], para_SpeedBias[i], para_Pose[j], para_SpeedBias[j]);
+        problem.AddResidualBlock(imu_factor, nullptr, para_Pose[i], para_SpeedBias[i], para_Pose[j], para_SpeedBias[j]);
     }
     int f_m_cnt = 0;
     int feature_index = -1;
@@ -771,7 +771,7 @@ void Estimator::optimization()
         //printf("set relocalization factor! \n");
         ceres::LocalParameterization *local_parameterization = new PoseLocalParameterization();
         problem.AddParameterBlock(relo_Pose, SIZE_POSE, local_parameterization);
-        int retrive_feature_index = 0;
+        size_t retrive_feature_index = 0;
         int feature_index = -1;
         for (auto &it_per_id : f_manager.feature)
         {
@@ -782,11 +782,11 @@ void Estimator::optimization()
             int start = it_per_id.start_frame;
             if(start <= relo_frame_local_index)
             {   
-                while((int)match_points[retrive_feature_index].z() < it_per_id.feature_id)
+                while(static_cast<int>(match_points[retrive_feature_index].z()) < it_per_id.feature_id)
                 {
                     retrive_feature_index++;
                 }
-                if((int)match_points[retrive_feature_index].z() == it_per_id.feature_id)
+                if(static_cast<int>(match_points[retrive_feature_index].z()) == it_per_id.feature_id)
                 {
                     Vector3d pts_j = Vector3d(match_points[retrive_feature_index].x(), match_points[retrive_feature_index].y(), 1.0);
                     Vector3d pts_i = it_per_id.feature_per_frame[0].point;
@@ -831,15 +831,15 @@ void Estimator::optimization()
         if (last_marginalization_info)
         {
             vector<int> drop_set;
-            for (int i = 0; i < static_cast<int>(last_marginalization_parameter_blocks.size()); i++)
+            for (size_t i = 0; i < last_marginalization_parameter_blocks.size(); ++i)
             {
                 if (last_marginalization_parameter_blocks[i] == para_Pose[0] ||
                     last_marginalization_parameter_blocks[i] == para_SpeedBias[0])
-                    drop_set.push_back(i);
+                    drop_set.push_back(static_cast<int>(i));
             }
             // construct new marginlization_factor
             MarginalizationFactor *marginalization_factor = new MarginalizationFactor(last_marginalization_info);
-            ResidualBlockInfo *residual_block_info = new ResidualBlockInfo(marginalization_factor, NULL,
+            ResidualBlockInfo *residual_block_info = new ResidualBlockInfo(marginalization_factor, nullptr,
                                                                            last_marginalization_parameter_blocks,
                                                                            drop_set);
 
@@ -850,7 +850,7 @@ void Estimator::optimization()
             if (pre_integrations[1]->sum_dt < 10.0)
             {
                 IMUFactor* imu_factor = new IMUFactor(pre_integrations[1]);
-                ResidualBlockInfo *residual_block_info = new ResidualBlockInfo(imu_factor, NULL,
+                ResidualBlockInfo *residual_block_info = new ResidualBlockInfo(imu_factor, nullptr,
                                                                            vector<double *>{para_Pose[0], para_SpeedBias[0], para_Pose[1], para_SpeedBias[1]},
                                                                            vector<int>{0, 1});
                 marginalization_info->addResidualBlockInfo(residual_block_info);
@@ -941,15 +941,15 @@ void Estimator::optimization()
             if (last_marginalization_info)
             {
                 vector<int> drop_set;
-                for (int i = 0; i < static_cast<int>(last_marginalization_parameter_blocks.size()); i++)
+                for (size_t i = 0; i < last_marginalization_parameter_blocks.size(); i++)
                 {
                     ROS_ASSERT(last_marginalization_parameter_blocks[i] != para_SpeedBias[WINDOW_SIZE - 1]);
                     if (last_marginalization_parameter_blocks[i] == para_Pose[WINDOW_SIZE - 1])
-                        drop_set.push_back(i);
+                        drop_set.push_back(static_cast<int>(i));
                 }
                 // construct new marginlization_factor
                 MarginalizationFactor *marginalization_factor = new MarginalizationFactor(last_marginalization_info);
-                ResidualBlockInfo *residual_block_info = new ResidualBlockInfo(marginalization_factor, NULL,
+                ResidualBlockInfo *residual_block_info = new ResidualBlockInfo(marginalization_factor, nullptr,
                                                                                last_marginalization_parameter_blocks,
                                                                                drop_set);
 
@@ -1053,7 +1053,7 @@ void Estimator::slideWindow()
                 {
                     if (it->second.pre_integration)
                         delete it->second.pre_integration;
-                    it->second.pre_integration = NULL;
+                    it->second.pre_integration = nullptr;
                 }
 
                 all_image_frame.erase(all_image_frame.begin(), it_0);

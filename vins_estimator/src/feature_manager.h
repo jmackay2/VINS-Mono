@@ -48,7 +48,7 @@ class FeaturePerId
     int start_frame;
     vector<FeaturePerFrame> feature_per_frame;
 
-    int used_num;
+    size_t used_num;
     bool is_outlier;
     bool is_margin;
     double estimated_depth;

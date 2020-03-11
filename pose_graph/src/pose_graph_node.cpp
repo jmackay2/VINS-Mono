@@ -188,7 +188,7 @@ void relo_relative_pose_callback(const nav_msgs::Odometry::ConstPtr &pose_msg)
     relative_q.y() = pose_msg->pose.pose.orientation.y;
     relative_q.z() = pose_msg->pose.pose.orientation.z;
     double relative_yaw = pose_msg->twist.twist.linear.x;
-    int index = pose_msg->twist.twist.linear.y;
+    int index = static_cast<int>(pose_msg->twist.twist.linear.y);
     //printf("receive index %d \n", index );
     Eigen::Matrix<double, 8, 1 > loop_info;
     loop_info << relative_t.x(), relative_t.y(), relative_t.z(),
@@ -297,9 +297,9 @@ void process()
         return;
     while (true)
     {
-        sensor_msgs::ImageConstPtr image_msg = NULL;
-        sensor_msgs::PointCloudConstPtr point_msg = NULL;
-        nav_msgs::Odometry::ConstPtr pose_msg = NULL;
+        sensor_msgs::ImageConstPtr image_msg = nullptr;
+        sensor_msgs::PointCloudConstPtr point_msg = nullptr;
+        nav_msgs::Odometry::ConstPtr pose_msg = nullptr;
 
         // find out the messages with same time stamp
         m_buf.lock();
@@ -335,7 +335,7 @@ void process()
         }
         m_buf.unlock();
 
-        if (pose_msg != NULL)
+        if (pose_msg != nullptr)
         {
             //printf(" pose time %f \n", pose_msg->header.stamp.toSec());
             //printf(" point time %f \n", point_msg->header.stamp.toSec());
@@ -403,7 +403,7 @@ void process()
                     p_2d_normal.y = point_msg->channels[i].values[1];
                     p_2d_uv.x = point_msg->channels[i].values[2];
                     p_2d_uv.y = point_msg->channels[i].values[3];
-                    p_id = point_msg->channels[i].values[4];
+                    p_id = static_cast<double>(point_msg->channels[i].values[4]);
                     point_2d_normal.push_back(p_2d_normal);
                     point_2d_uv.push_back(p_2d_uv);
                     point_id.push_back(p_id);
@@ -433,7 +433,7 @@ void command()
         return;
     while(1)
     {
-        char c = getchar();
+        char c = static_cast<char>(getchar());
         if (c == 's')
         {
             m_process.lock();

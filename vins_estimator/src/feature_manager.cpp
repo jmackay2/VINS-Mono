@@ -44,7 +44,7 @@ int FeatureManager::getFeatureCount()
 
 bool FeatureManager::addFeatureCheckParallax(int frame_count, const map<int, vector<pair<int, Eigen::Matrix<double, 7, 1>>>> &image, double td)
 {
-    ROS_DEBUG("input feature: %d", (int)image.size());
+    ROS_DEBUG("input feature: %d", static_cast<int>(image.size()));
     ROS_DEBUG("num of feature: %d", getFeatureCount());
     double parallax_sum = 0;
     int parallax_num = 0;
@@ -105,7 +105,7 @@ void FeatureManager::debugShow()
         ROS_ASSERT(it.start_frame >= 0);
         ROS_ASSERT(it.used_num >= 0);
 
-        ROS_DEBUG("%d,%d,%d ", it.feature_id, it.used_num, it.start_frame);
+        ROS_DEBUG("%d,%d,%d ", it.feature_id, static_cast<int>(it.used_num), it.start_frame);
         int sum = 0;
         for (auto &j : it.feature_per_frame)
         {
@@ -113,7 +113,7 @@ void FeatureManager::debugShow()
             sum += j.is_used;
             printf("(%lf,%lf) ",j.point(0), j.point(1));
         }
-        ROS_ASSERT(it.used_num == sum);
+        ROS_ASSERT(static_cast<int>(it.used_num) == sum);
     }
 }
 
@@ -128,9 +128,9 @@ vector<pair<Vector3d, Vector3d>> FeatureManager::getCorresponding(int frame_coun
             int idx_l = frame_count_l - it.start_frame;
             int idx_r = frame_count_r - it.start_frame;
 
-            a = it.feature_per_frame[idx_l].point;
+            a = it.feature_per_frame[static_cast<size_t>(idx_l)].point;
 
-            b = it.feature_per_frame[idx_r].point;
+            b = it.feature_per_frame[static_cast<size_t>(idx_r)].point;
             
             corres.push_back(make_pair(a, b));
         }
@@ -356,8 +356,8 @@ double FeatureManager::compensatedParallax2(const FeaturePerId &it_per_id, int f
 {
     //check the second last frame is keyframe or not
     //parallax betwwen seconde last frame and third last frame
-    const FeaturePerFrame &frame_i = it_per_id.feature_per_frame[frame_count - 2 - it_per_id.start_frame];
-    const FeaturePerFrame &frame_j = it_per_id.feature_per_frame[frame_count - 1 - it_per_id.start_frame];
+    const FeaturePerFrame &frame_i = it_per_id.feature_per_frame[static_cast<size_t>(frame_count - 2 - it_per_id.start_frame)];
+    const FeaturePerFrame &frame_j = it_per_id.feature_per_frame[static_cast<size_t>(frame_count - 1 - it_per_id.start_frame)];
 
     double ans = 0;
     Vector3d p_j = frame_j.point;
